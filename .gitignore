@@ -1,0 +1,59 @@
+############################
+# Python bytecode & caches #
+############################
+__pycache__/
+*.py[cod]
+*$py.class
+
+############################
+# Virtual environments      #
+############################
+.venv/
+venv/
+env/
+.env
+pip-wheel-metadata/
+
+############################
+# Build / packaging output #
+############################
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+*.manifest
+*.spec
+
+############################
+# Logs / coverage / tests  #
+############################
+*.log
+coverage.xml
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+
+############################
+# Notebook artifacts       #
+############################
+.ipynb_checkpoints/
+.notebook_cache/
+
+############################
+# Editor / OS miscellany   #
+############################
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
+Thumbs.db
+
+############################
+# Project-specific assets  #
+############################
+data/raw/
+data/tmp/
+models/
+reports/figures/
