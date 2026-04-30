@@ -54,6 +54,4 @@ Thumbs.db
 # Project-specific assets  #
 ############################
 data/raw/
-data/tmp/
-models/
-reports/figures/
+data/processed

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Retention Intelligence</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --surface: #ffffff;
+      --surface-muted: #f8fafc;
+      --border: #d7dee7;
+      --text: #18212b;
+      --muted: #5d6b79;
+      --primary: #1f5f8b;
+      --primary-soft: #e8f1f8;
+      --success: #177245;
+      --success-soft: #e8f5ee;
+      --warn: #9a6700;
+      --warn-soft: #fff4db;
+      --danger: #a12622;
+      --danger-soft: #fdeceb;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .title-block h1 {
+      margin: 0 0 6px;
+      font-size: 1.85rem;
+      font-weight: 650;
+    }
+
+    .title-block p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 720px;
+    }
+
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #94a3b8;
+      flex: 0 0 auto;
+    }
+
+    .status-chip.online .status-dot {
+      background: var(--success);
+    }
+
+    .status-chip.offline .status-dot {
+      background: var(--danger);
+    }
+
+    .summary-grid,
+    .work-grid {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .work-grid {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel-header {
+      padding: 18px 20px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 650;
+    }
+
+    .panel-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .panel-body {
+      padding: 18px 20px 20px;
+    }
+
+    .stat {
+      padding: 18px;
+    }
+
+    .stat-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .stat-value {
+      font-size: 1.65rem;
+      font-weight: 650;
+    }
+
+    .stat-note {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-muted);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      outline: 2px solid rgba(31, 95, 139, 0.12);
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 11px 16px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .result-box {
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-muted);
+      min-height: 88px;
+    }
+
+    .result-box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .result-box span {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .pill.success {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .pill.warn {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .pill.danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .pill.info {
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .helper-text {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .upload-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .file-name {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    .message,
+    .download-box {
+      padding: 12px 14px;
+      border-radius: 6px;
+      font-size: 0.92rem;
+    }
+
+    .message {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-muted);
+      color: var(--muted);
+    }
+
+    .message.error {
+      display: block;
+      border-color: #efc0bd;
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+
+    .message.success {
+      display: block;
+      border-color: #bfdfcc;
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .download-box {
+      display: none;
+      margin-top: 12px;
+      border: 1px solid #bfdfcc;
+      background: var(--success-soft);
+      color: var(--success);
+    }
+
+    .download-box a {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .segment-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .segment-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) repeat(4, minmax(0, 0.8fr));
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface-muted);
+    }
+
+    .segment-item strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+
+    .segment-item span {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .segment-metric {
+      font-size: 0.92rem;
+      color: var(--text);
+    }
+
+    .segment-metric small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .footer-note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    @media (max-width: 980px) {
+      .summary-grid,
+      .work-grid,
+      .form-grid,
+      .result-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .segment-item {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 16px;
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .segment-item {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div class="title-block">
+        <h1>Customer Retention Intelligence</h1>
+        <p>Operational view for churn prediction, segment classification, and batch scoring. This frontend stays close to the API and keeps the workflow straightforward.</p>
+      </div>
+      <div id="health-status" class="status-chip">
+        <span class="status-dot"></span>
+        <span>Checking API</span>
+      </div>
+    </header>
+
+    <section class="summary-grid">
+      <div class="panel stat">
+        <span class="stat-label">Available tools</span>
+        <div class="stat-value">3</div>
+        <div class="stat-note">Single churn, segmentation, CSV batch scoring</div>
+      </div>
+      <div class="panel stat">
+        <span class="stat-label">Churn endpoint</span>
+        <div class="stat-value">`/churn/predict`</div>
+        <div class="stat-note">Probability, prediction, intervention</div>
+      </div>
+      <div class="panel stat">
+        <span class="stat-label">Segmentation endpoint</span>
+        <div class="stat-value">`/segmentation/predict`</div>
+        <div class="stat-note">Cluster and business label</div>
+      </div>
+      <div class="panel stat">
+        <span class="stat-label">Batch format</span>
+        <div class="stat-value">CSV</div>
+        <div class="stat-note">`customer_id`, `recency`, `frequency`, `monetary`</div>
+      </div>
+    </section>
+
+    <section class="work-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Single Customer Analysis</h2>
+          <p>Enter one customer’s RFM values and run either model. The same input powers both predictions.</p>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="customer-id">Customer ID</label>
+              <input id="customer-id" type="text" value="12345" placeholder="12345">
+            </div>
+            <div class="field">
+              <label for="recency">Recency (days)</label>
+              <input id="recency" type="number" min="0" step="0.1" value="14">
+            </div>
+            <div class="field">
+              <label for="frequency">Frequency</label>
+              <input id="frequency" type="number" min="0.1" step="0.1" value="8">
+            </div>
+            <div class="field">
+              <label for="monetary">Monetary</label>
+              <input id="monetary" type="number" min="0.1" step="0.1" value="420.5">
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="run-churn" class="primary" type="button">Run Churn Prediction</button>
+            <button id="run-segment" type="button">Run Segmentation</button>
+          </div>
+
+          <div class="result-grid">
+            <div class="result-box">
+              <strong>Churn Probability</strong>
+              <span id="churn-probability">Waiting for input</span>
+            </div>
+            <div class="result-box">
+              <strong>Churn Decision</strong>
+              <span id="churn-decision">Not run</span>
+            </div>
+            <div class="result-box">
+              <strong>Intervention</strong>
+              <span id="intervention">Not run</span>
+            </div>
+            <div class="result-box">
+              <strong>Segment</strong>
+              <span id="segment-result">Not run</span>
+            </div>
+          </div>
+
+          <div id="single-message" class="message"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Interpretation Guide</h3>
+          <p>Simple business framing for the model outputs.</p>
+        </div>
+        <div class="panel-body">
+          <p class="helper-text"><span class="pill danger">Save</span> High churn risk and high customer value.</p>
+          <p class="helper-text"><span class="pill warn">Lost Cause</span> High churn risk with lower commercial value.</p>
+          <p class="helper-text"><span class="pill info">Protect</span> Lower churn risk and higher value.</p>
+          <p class="helper-text"><span class="pill success">Maintain</span> Lower churn risk and lower value.</p>
+          <p class="footer-note">The segmentation model assigns a cluster and a label so the result can be used alongside churn scoring.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="work-grid">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>Batch Churn Scoring</h2>
+          <p>Upload a CSV and receive a scored CSV in return.</p>
+        </div>
+        <div class="panel-body">
+          <p class="helper-text">Required columns: <code>customer_id</code>, <code>recency</code>, <code>frequency</code>, <code>monetary</code>.</p>
+          <div class="upload-row">
+            <input id="csv-file" type="file" accept=".csv">
+            <button id="upload-csv" class="primary" type="button">Score CSV</button>
+            <button id="download-template" type="button">Download Template</button>
+          </div>
+          <div id="file-name" class="file-name">No file selected</div>
+          <div id="batch-message" class="message"></div>
+          <div id="download-box" class="download-box">
+            Scoring finished. <a id="download-link" href="#" download="churn_predictions.csv">Download scored CSV</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <h3>What the batch response adds</h3>
+          <p>Returned file keeps the source columns and appends model output.</p>
+        </div>
+        <div class="panel-body">
+          <p class="helper-text"><code>churn_probability</code> is the predicted risk score from the churn model.</p>
+          <p class="helper-text"><code>churn_predicted</code> is the binary decision output.</p>
+          <p class="helper-text"><code>intervention</code> maps the result into an action segment.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Segment Reference</h2>
+        <p>Current segment labels and average RFM values from <code>/segmentation/segments</code>.</p>
+      </div>
+      <div class="panel-body">
+        <div id="segment-list" class="segment-list"></div>
+        <div id="segment-message" class="message"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const healthStatus = document.getElementById("health-status");
+    const singleMessage = document.getElementById("single-message");
+    const batchMessage = document.getElementById("batch-message");
+    const segmentMessage = document.getElementById("segment-message");
+    const csvFileInput = document.getElementById("csv-file");
+    const fileName = document.getElementById("file-name");
+    const downloadBox = document.getElementById("download-box");
+    const downloadLink = document.getElementById("download-link");
+
+    function setMessage(element, text, type) {
+      element.textContent = text;
+      element.className = "message";
+      if (text) {
+        element.classList.add(type);
+      }
+    }
+
+    function getCustomerPayload() {
+      return {
+        customer_id: document.getElementById("customer-id").value.trim(),
+        recency: Number(document.getElementById("recency").value),
+        frequency: Number(document.getElementById("frequency").value),
+        monetary: Number(document.getElementById("monetary").value)
+      };
+    }
+
+    function validatePayload(payload) {
+      if (!payload.customer_id) {
+        return "Customer ID is required.";
+      }
+      if (payload.recency < 0 || Number.isNaN(payload.recency)) {
+        return "Recency must be zero or greater.";
+      }
+      if (payload.frequency <= 0 || Number.isNaN(payload.frequency)) {
+        return "Frequency must be greater than zero.";
+      }
+      if (payload.monetary <= 0 || Number.isNaN(payload.monetary)) {
+        return "Monetary must be greater than zero.";
+      }
+      return "";
+    }
+
+    function interventionClass(value) {
+      if (value === "Save") return "danger";
+      if (value === "Lost Cause") return "warn";
+      if (value === "Protect") return "info";
+      return "success";
+    }
+
+    async function fetchJSON(url, options) {
+      const response = await fetch(url, options);
+      if (!response.ok) {
+        let detail = "Request failed.";
+        try {
+          const data = await response.json();
+          detail = data.detail || detail;
+        } catch (error) {
+          detail = response.statusText || detail;
+        }
+        throw new Error(detail);
+      }
+      return response.json();
+    }
+
+    async function loadHealth() {
+      try {
+        const data = await fetchJSON("/health");
+        healthStatus.className = "status-chip online";
+        healthStatus.innerHTML = '<span class="status-dot"></span><span>' + data.status.toUpperCase() + ": " + data.message + "</span>";
+      } catch (error) {
+        healthStatus.className = "status-chip offline";
+        healthStatus.innerHTML = '<span class="status-dot"></span><span>API unavailable</span>';
+      }
+    }
+
+    async function runChurn() {
+      const payload = getCustomerPayload();
+      const validationError = validatePayload(payload);
+      if (validationError) {
+        setMessage(singleMessage, validationError, "error");
+        return;
+      }
+
+      const button = document.getElementById("run-churn");
+      button.disabled = true;
+      setMessage(singleMessage, "", "");
+
+      try {
+        const data = await fetchJSON("/churn/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById("churn-probability").textContent = (data.churn_probability * 100).toFixed(1) + "%";
+        document.getElementById("churn-decision").textContent = data.churn_predicted ? "Churn predicted" : "No churn predicted";
+        document.getElementById("intervention").innerHTML = '<span class="pill ' + interventionClass(data.intervention) + '">' + data.intervention + "</span>";
+        setMessage(singleMessage, "Churn prediction completed successfully.", "success");
+      } catch (error) {
+        setMessage(singleMessage, error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function runSegmentation() {
+      const payload = getCustomerPayload();
+      const validationError = validatePayload(payload);
+      if (validationError) {
+        setMessage(singleMessage, validationError, "error");
+        return;
+      }
+
+      const button = document.getElementById("run-segment");
+      button.disabled = true;
+      setMessage(singleMessage, "", "");
+
+      try {
+        const data = await fetchJSON("/segmentation/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        document.getElementById("segment-result").textContent = data.segment_label + " (Cluster " + data.cluster + ")";
+        setMessage(singleMessage, "Segmentation completed successfully.", "success");
+      } catch (error) {
+        setMessage(singleMessage, error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function loadSegments() {
+      try {
+        const segments = await fetchJSON("/segmentation/segments");
+        const container = document.getElementById("segment-list");
+        container.innerHTML = "";
+
+        segments.forEach((segment) => {
+          const item = document.createElement("div");
+          item.className = "segment-item";
+          item.innerHTML = `
+            <div>
+              <strong>${segment.segment_label}</strong>
+              <span>Cluster ${segment.cluster}</span>
+            </div>
+            <div class="segment-metric">
+              ${segment.total_customers}
+              <small>Total customers</small>
+            </div>
+            <div class="segment-metric">
+              ${segment.avg_recency.toFixed(1)}
+              <small>Avg recency</small>
+            </div>
+            <div class="segment-metric">
+              ${segment.avg_frequency.toFixed(1)}
+              <small>Avg frequency</small>
+            </div>
+            <div class="segment-metric">
+              ${segment.avg_monetary.toFixed(1)}
+              <small>Avg monetary</small>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      } catch (error) {
+        setMessage(segmentMessage, error.message, "error");
+      }
+    }
+
+    async function uploadCSV() {
+      if (!csvFileInput.files.length) {
+        setMessage(batchMessage, "Choose a CSV file before scoring.", "error");
+        return;
+      }
+
+      setMessage(batchMessage, "", "");
+      downloadBox.style.display = "none";
+
+      const button = document.getElementById("upload-csv");
+      button.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append("file", csvFileInput.files[0]);
+
+        const response = await fetch("/churn/predict/csv", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          let detail = "CSV scoring failed.";
+          try {
+            const data = await response.json();
+            detail = data.detail || detail;
+          } catch (error) {
+            detail = response.statusText || detail;
+          }
+          throw new Error(detail);
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        downloadLink.href = url;
+        downloadBox.style.display = "block";
+        setMessage(batchMessage, "Batch scoring completed successfully.", "success");
+      } catch (error) {
+        setMessage(batchMessage, error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function downloadTemplate() {
+      const csv = [
+        "customer_id,recency,frequency,monetary",
+        "12345,14,8,420.5",
+        "67890,120,2,75.0"
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "churn_batch_template.csv";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    csvFileInput.addEventListener("change", () => {
+      const file = csvFileInput.files[0];
+      fileName.textContent = file ? file.name : "No file selected";
+    });
+
+    document.getElementById("run-churn").addEventListener("click", runChurn);
+    document.getElementById("run-segment").addEventListener("click", runSegmentation);
+    document.getElementById("upload-csv").addEventListener("click", uploadCSV);
+    document.getElementById("download-template").addEventListener("click", downloadTemplate);
+
+    loadHealth();
+    loadSegments();
+  </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "workspace": "/Users/damola/Desktop/customer-retention-intelligence/deliverables/customer-retention-presentation",
+  "pptx": "/Users/damola/Desktop/customer-retention-intelligence/deliverables/customer-retention-presentation/output/output.pptx",
+  "checks": {
+    "pptx_package": {
+      "slide_count": 12,
+      "media_count": 10,
+      "chart_count": 1,
+      "zero_byte_media": [],
+      "invalid_png_media": [],
+      "placeholder_text": [],
+      "debug_line_colors": [],
+      "slide_numbers": [],
+      "warnings": [],
+      "failures": []
+    },
+    "output_hygiene": {
+      "output_dir": "/Users/damola/Desktop/customer-retention-intelligence/deliverables/customer-retention-presentation/output",
+      "unexpected_files": []
+    }
+  },
+  "failures": [],
+  "warnings": []
+}
