@@ -17,8 +17,12 @@ from fastapi.staticfiles import StaticFiles
 from app.routers import churn, segmentation
 from app.schemas import HealthCheck
 from src.utils import get_logger
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 logger = get_logger(__name__)
+
+BASE_DIR = Path(__file__).parent
 
 # --- App Initialization ---
 # FastAPI() creates your application instance.
@@ -68,4 +72,6 @@ def health_check():
 # including /churn and /segmentation, and your API endpoints become unreachable.
 # html=True means requests to / automatically serve index.html.
 
-app.mount("/", StaticFiles(directory="app/static", html=True), name="static")
+@app.get("/")
+async def serve_frontend():
+    return FileResponse(BASE_DIR / "static" / "index.html")
