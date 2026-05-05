@@ -1,36 +1,31 @@
 # Customer Retention Intelligence
 
-Customer Retention Intelligence is a FastAPI application for two practical retention workflows:
+Customer Retention Intelligence is a FastAPI application for retention operations: churn prediction, customer segmentation, and CSV batch scoring. It combines pretrained machine learning artifacts with a lightweight browser frontend so the same service can be used as an API, an internal analyst tool, or a public demo.
 
-- predicting customer churn probability and assigning a recommended intervention
-- classifying customers into RFM-based behavioral segments
+Live deployment: https://customer-retention-intelligence-1.onrender.com/
 
-The project includes trained model artifacts, a browser-based frontend for operators, and API endpoints for direct integration into dashboards, internal tools, or automation pipelines.
+## What It Does
 
-Alongside the application, the repository includes the exploratory notebooks, saved report figures, and a polished project presentation that turns the modeling work into business recommendations for stakeholders.
+The app turns simple RFM inputs into operational outputs:
 
-## What the project does
+- churn prediction returns a churn probability, a binary churn flag, and a recommended intervention
+- segmentation returns a cluster ID and a human-readable segment label
+- batch scoring accepts a CSV upload and returns a scored CSV for download
 
-This application turns simple customer RFM inputs into business-ready outputs:
+The root route serves the frontend, while the API remains available for programmatic use.
 
-- `Churn prediction`: returns a churn probability, a binary churn flag, and an intervention label
-- `Customer segmentation`: returns a cluster ID and a human-readable segment label
-- `Batch scoring`: accepts a CSV upload and returns a scored CSV
-
-The root route `/` serves the frontend, and the API remains available for programmatic use.
-
-## Features
+## Highlights
 
 - FastAPI backend with typed request and response schemas
-- Static frontend for single-customer analysis and CSV batch uploads
-- Health endpoint for deployment monitoring
-- Pretrained churn, segmentation, and scaler artifacts in `models/`
-- Exploratory notebooks in `notebooks/` and report charts in `reports/figures/`
-- Business presentation deck in `deliverables/customer-retention-presentation/output/output.pptx`
-- Docker support for container deployments
-- Ready for platforms like Render and Railway
+- cached model loading through `joblib` and `functools.lru_cache`
+- single-customer churn and segmentation prediction endpoints
+- batch CSV churn scoring endpoint
+- static frontend served from `/` with health, prediction, and upload workflows
+- pre-trained artifacts in `models/` for churn, segmentation, and scaling
+- notebooks, charts, and presentation assets for the broader analysis story
+- Docker support and a Render-friendly startup command
 
-## Project structure
+## Project Structure
 
 ```text
 customer-retention-intelligence/
@@ -43,154 +38,73 @@ customer-retention-intelligence/
 │   │   └── segmentation.py
 │   └── static/
 │       └── index.html
+├── data/
+│   ├── raw/
+│   │   └── OnlineRetail.csv
+│   └── processed/
+│       ├── customer_clean.csv
+│       ├── customers_scored_churn.csv
+│       ├── rfm.csv
+│       └── rfm_segmented.csv
 ├── models/
 │   ├── churn_model.pkl
 │   ├── segmentation_model.pkl
 │   └── scaler.pkl
-├── deliverables/
-│   └── customer-retention-presentation/
-│       ├── output/
-│       │   └── output.pptx
-│       └── scratch/
-│           └── previews/
-├── src/
-│   ├── churn_model.py
-│   ├── segmentation.py
-│   ├── rfm.py
-│   ├── data_processing.py
-│   └── utils.py
 ├── notebooks/
+│   ├── eda.ipynb
+│   ├── rfm_analysis.ipynb
+│   ├── Segmentation.ipynb
+│   └── churn_prediction.ipynb
 ├── reports/
+│   └── figures/
+├── customer-retention-presentation/
+│   └── slide-presentation.pptx
+├── src/
+│   ├── data_processing.py
+│   ├── rfm.py
+│   ├── segmentation.py
+│   ├── churn_model.py
+│   └── utils.py
+├── tests/
 ├── requirements.txt
 └── Dockerfile
 ```
 
-## Tech stack
+## How It Works
 
-- Python 3.11+
-- FastAPI
-- Uvicorn
-- Pydantic
-- scikit-learn
-- pandas
-- NumPy
-- joblib
+The runtime API is built around a simple RFM feature set:
 
-## Local setup
+- `recency` = days since last purchase
+- `frequency` = number of purchases or invoices
+- `monetary` = total spend
 
-### 1. Clone the repository
+For churn prediction, the service log-transforms the inputs, derives simple R/F/M scores, and feeds the features into the saved classifier. It then maps the churn probability and monetary value into an action label:
 
-```bash
-git clone <your-repo-url>
-cd customer-retention-intelligence
-```
+- Save
+- Lost Cause
+- Protect
+- Maintain
 
-### 2. Create and activate a virtual environment
+For segmentation, the service log-transforms the same raw inputs, scales them with the saved scaler, and predicts the customer cluster with the saved KMeans model. The cluster is then translated into a business label:
 
-macOS or Linux:
+- Champions
+- Loyal Customers
+- At Risk
+- Lost / Inactive
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Windows PowerShell:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-### 3. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Run the app
-
-```bash
-uvicorn app.main:app --reload
-```
-
-The application will be available at:
-
-- Frontend: [http://127.0.0.1:8000](http://127.0.0.1:8000)
-- API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-- Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)
-
-## Frontend overview
-
-The frontend at `/` is intentionally simple and operational. It supports:
-
-- single-customer churn prediction
-- single-customer segmentation
-- CSV upload for batch churn scoring
-- live API health display
-- segment summary display from the backend
-
-This makes the project usable both as an API and as a lightweight internal tool.
-
-## Analysis and business story
-
-The predictive services in this repo come from a broader retention analysis workflow captured in the notebooks and report visuals:
-
-- `notebooks/eda.ipynb`: commercial footprint, seasonality, order timing, and revenue concentration
-- `notebooks/rfm_analysis.ipynb`: customer value analysis, RFM segmentation heuristics, and cohort retention
-- `notebooks/Segmentation.ipynb`: KMeans clustering, cluster profiling, and segment interpretation
-- `notebooks/churn_prediction.ipynb`: churn labeling approach, model comparison, and final evaluation
-- `reports/figures/`: exported charts used in the final presentation and business review
-
-Key business takeaways from the analysis:
-
-- the top 20% of customers contribute about `74.64%` of revenue
-- the known-customer revenue base in the analysis is about `$8.88M`
-- retention decays quickly after the first purchase month, making second-order conversion a critical lifecycle objective
-- the largest customer group is not the most valuable; the highest value pool sits inside the best recent, frequent, high-spend customers
-- the churn model is useful for prioritizing outreach and intervention, but should be used with business rules rather than as a fully automatic decision engine
-
-## Presentation deliverable
-
-The repository includes a stakeholder-ready PowerPoint presentation at:
-
-- [output.pptx](/Users/damola/Desktop/customer-retention-intelligence/deliverables/customer-retention-presentation/output/output.pptx)
-
-Supporting artifacts for the presentation build live here:
-
-- deck source: [build_deck.mjs](/Users/damola/Desktop/customer-retention-intelligence/deliverables/customer-retention-presentation/src/build_deck.mjs)
-- preview renders: `deliverables/customer-retention-presentation/scratch/previews/`
-- packaged QA report: `deliverables/customer-retention-presentation/scratch/quality-report.json`
-
-The presentation covers:
-
-- business context and commercial concentration
-- seasonality and demand timing
-- cohort retention behavior
-- RFM data preparation and why normalization matters
-- customer segment economics and recommended retention plays
-- churn model performance and how to use it operationally
-- a 90-day action plan for activation, retention, and win-back
-
-## API overview
+## API Reference
 
 ### Health
 
 `GET /health`
 
-Response:
+Returns a simple service status payload used by deployment health checks and the frontend status chip.
 
-```json
-{
-  "status": "ok",
-  "message": "Customer Retention Intelligence API is running"
-}
-```
-
-### Churn prediction
+### Single Churn Prediction
 
 `POST /churn/predict`
 
-Request:
+Request body:
 
 ```json
 {
@@ -201,22 +115,18 @@ Request:
 }
 ```
 
-Response:
+Response includes:
 
-```json
-{
-  "customer_id": "12345",
-  "churn_probability": 0.36,
-  "churn_predicted": 0,
-  "intervention": "Protect"
-}
-```
+- `customer_id`
+- `churn_probability`
+- `churn_predicted`
+- `intervention`
 
-### Batch churn prediction
+### Batch Churn Prediction
 
 `POST /churn/predict/batch`
 
-Request:
+Request body:
 
 ```json
 {
@@ -237,27 +147,29 @@ Request:
 }
 ```
 
-### CSV churn scoring
+Returns `total_customers` plus a list of individual churn responses.
+
+### CSV Churn Scoring
 
 `POST /churn/predict/csv`
 
-Upload a `.csv` file with these required columns:
+Upload a CSV with these required columns:
 
 ```text
 customer_id,recency,frequency,monetary
 ```
 
-The response is a downloadable CSV containing the original columns plus:
+The response is a downloadable CSV with these extra columns appended:
 
 ```text
 churn_probability,churn_predicted,intervention
 ```
 
-### Segmentation
+### Single Segmentation Prediction
 
 `POST /segmentation/predict`
 
-Request:
+Request body:
 
 ```json
 {
@@ -268,60 +180,69 @@ Request:
 }
 ```
 
-Response:
+Response includes:
 
-```json
-{
-  "customer_id": "12345",
-  "cluster": 2,
-  "segment_label": "At Risk",
-  "recency": 14,
-  "frequency": 8,
-  "monetary": 420.5
-}
-```
+- `customer_id`
+- `cluster`
+- `segment_label`
+- `recency`
+- `frequency`
+- `monetary`
 
-### Segment summaries
+### Segment Reference
 
 `GET /segmentation/segments`
 
-Returns the available clusters and their summary statistics.
+Returns the current segment labels plus summary statistics used by the frontend.
 
-## Example curl commands
+## Frontend
 
-Single churn prediction:
+The browser frontend at `/` is intentionally operational rather than decorative. It supports:
 
-```bash
-curl -X POST "http://127.0.0.1:8000/churn/predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_id": "12345",
-    "recency": 14,
-    "frequency": 8,
-    "monetary": 420.5
-  }'
-```
+- live service health checks
+- single-customer churn prediction
+- single-customer segmentation
+- CSV upload for batch churn scoring
+- downloadable scored CSV output
+- a segment reference panel sourced from `/segmentation/segments`
 
-Single segmentation prediction:
+## Local Setup
 
-```bash
-curl -X POST "http://127.0.0.1:8000/segmentation/predict" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_id": "12345",
-    "recency": 14,
-    "frequency": 8,
-    "monetary": 420.5
-  }'
-```
+### 1. Create and activate a virtual environment
 
-Health check:
+macOS or Linux:
 
 ```bash
-curl http://127.0.0.1:8000/health
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
-## Running with Docker
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Run the app
+
+```bash
+uvicorn app.main:app --reload
+```
+
+The app will be available at:
+
+- Frontend: http://127.0.0.1:8000
+- API docs: http://127.0.0.1:8000/docs
+- Health check: http://127.0.0.1:8000/health
+
+## Docker
 
 Build the image:
 
@@ -335,100 +256,52 @@ Run the container:
 docker run -p 8000:8000 customer-retention-intelligence
 ```
 
-The Docker image now respects the platform-provided `PORT` environment variable, which is useful for managed deployments.
+The container listens on the platform-provided `PORT` when it is set, which makes it compatible with managed platforms such as Render.
 
-## Deploying to Render
+## Deployment
 
-### Option 1: Native Python service
+### Render
 
-Use this if you want a simple deploy without building a container.
+The project is already deployed on Render at:
 
-- Create a new `Web Service`
-- Connect your GitHub repository
-- Environment: `Python 3`
-- Build command:
+https://customer-retention-intelligence-1.onrender.com/
 
-```bash
-pip install -r requirements.txt
-```
-
-- Start command:
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
-
-- Health check path:
-
-```text
-/health
-```
-
-Recommended settings:
-
-- Instance type: starter or above
-- Auto deploy: on
-- Root directory: leave blank unless this repo becomes a monorepo
-
-### Option 2: Docker service
-
-Use this if you want Render to build from the included `Dockerfile`.
-
-- Create a new `Web Service`
-- Choose `Docker`
-- Point it to this repository
-- Set health check path to `/health`
-
-Render will provide `PORT`, and the container is already configured to use it.
-
-## Deploying to Railway
-
-### Option 1: Deploy from source
-
-- Create a new project in Railway
-- Link the repository
-- Set the start command to:
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
-
-- Ensure the install step uses:
+For a source-based Render service, use:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Option 2: Deploy with Docker
+as the build command and:
 
-- Create a new Railway project from the repository
-- Let Railway detect the `Dockerfile`
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
 
-Railway will inject `PORT`, and the app will bind correctly.
+as the start command, with `/health` as the health check path.
 
-## Deployment checklist
+You can also deploy the repository as a Docker service and let Render build from the included `Dockerfile`.
 
-Before pushing to Render or Railway, confirm:
+## Analysis Assets
 
-- `models/` is committed and available in the repository
-- `app/static/index.html` is present so the frontend can be served
-- `requirements.txt` is up to date
-- `GET /health` returns `200 OK`
-- the repo size is acceptable for your deployment platform
+The application is backed by the broader retention analysis workflow in the repository:
 
-## Known notes
+- `notebooks/eda.ipynb` explores revenue concentration, seasonality, and customer behavior
+- `notebooks/rfm_analysis.ipynb` covers RFM construction and segmentation heuristics
+- `notebooks/Segmentation.ipynb` profiles clusters and maps them to business labels
+- `notebooks/churn_prediction.ipynb` documents the churn modeling workflow
+- `reports/figures/` contains exported charts used in the reporting narrative
+- `customer-retention-presentation/output/output.pptx` is the packaged presentation deck
 
-- The saved model artifacts may emit scikit-learn version warnings if they were trained with a different version than the one installed at runtime. If that happens, the safest fix is to retrain or re-export the models under the same scikit-learn version used in production.
-- The current segment summary endpoint returns static summary values. If you want live values from a scored dataset later, that can be added as a follow-up enhancement.
+## Data and Model Artifacts
 
-## Future improvements
+- `data/raw/OnlineRetail.csv` is the raw retail transaction source
+- `data/processed/customer_clean.csv` is the cleaned transaction dataset
+- `data/processed/rfm.csv` and `data/processed/rfm_segmented.csv` are the downstream analysis outputs
+- `models/churn_model.pkl`, `models/segmentation_model.pkl`, and `models/scaler.pkl` are required at runtime
 
-- add authentication for internal deployments
-- store batch scoring results in object storage
-- add request logging and monitoring
-- add model version metadata to responses
-- expose richer analytics charts from the generated reports
+## Notes
 
-## License
-
-Add your preferred license here before publishing the repository.
+- The segment summary endpoint currently returns static cluster summaries rather than live aggregates from a database.
+- The saved model artifacts may emit version warnings if they were trained with a different scikit-learn release than the one installed at runtime.
+- The `tests/` folder is currently empty, so there is no automated test suite documented in this repository yet.
